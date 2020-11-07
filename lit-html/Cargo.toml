@@ -13,6 +13,6 @@ readme="../README.md"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-js= "0.2"
-globals = "1"
+js= "0.2.3"
+globals = "1.0.1"
 lit-html-macro={path="../lit-html-macro",version="0"}

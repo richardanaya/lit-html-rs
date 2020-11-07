@@ -1,7 +1,6 @@
 [package]
 name = "lit-html-macro"
 version = "0.0.0"
-version = "0.0.1"
 authors = ["Richard Anaya"]
 edition = "2018"
 description = "A macro for using lit-html"
@@ -14,7 +13,6 @@ readme="../README.md"
 
 [lib]
 proc-macro = true
-quote="1"
 
 [dependencies.syn]
 version = "1"

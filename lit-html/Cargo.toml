@@ -1,7 +1,7 @@
 [package]
 name = "lit-html"
 version = "0.0.1"
-authors = ["Richard <Richard>"]
+authors = ["Richard Anaya"]
 edition = "2018"
 description = "A library for rendering HTML"
 license = "MIT OR Apache-2.0"

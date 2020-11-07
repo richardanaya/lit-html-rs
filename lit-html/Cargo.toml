@@ -15,3 +15,4 @@ readme="../README.md"
 [dependencies]
 js= "0.2"
 globals = "1"
+lit-html-macro={path="../lit-html-macro",version="0"}

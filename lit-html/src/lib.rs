@@ -33,3 +33,5 @@ pub trait Template {
 
 pub mod globals;
 pub mod js;
+
+pub use lit_html_macro::template;

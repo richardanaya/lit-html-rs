@@ -6,4 +6,10 @@ edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
-[dependencies]
+[lib]
+proc-macro = true
+quote="1"
+
+[dependencies.syn]
+version = "1"
+features = ["full"]

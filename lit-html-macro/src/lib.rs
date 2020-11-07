@@ -72,7 +72,7 @@ pub fn template(metadata: TokenStream, input: TokenStream) -> TokenStream {
     {}
     
     struct {}Builder {{
-        fn_builder: lit_html::js::JSInvoker,
+        fn_builder: lit_html::js::JSFunction,
     }}
     
     impl Default for {}Builder {{

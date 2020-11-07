@@ -1,7 +1,7 @@
 #![no_std]
 
 struct LitHtml {
-    render: js::JSInvoker,
+    render: js::JSFunction,
 }
 
 impl Default for LitHtml {

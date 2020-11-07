@@ -1,6 +1,6 @@
 # lit-html-rs
 
-A library for using the HTML template library [lit-html](https://lit-html.polymer-project.org/).
+A Rust library for using the HTML template library [lit-html](https://lit-html.polymer-project.org/).
 
 ```rust
 use lit_html::*;
@@ -15,7 +15,6 @@ pub fn main() {
     let template = HelloWorldTemplate {
         name: "Richard".to_string(),
     };
-    let template_result = template.execute();
-    render(template_result, js::DOM_BODY);
+    render(template.execute(), js::DOM_BODY);
 }
 ```

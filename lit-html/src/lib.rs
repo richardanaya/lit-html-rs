@@ -1,3 +1,5 @@
+#![no_std]
+
 struct LitHtml {
     render: js::JSInvoker,
 }

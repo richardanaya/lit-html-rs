@@ -14,7 +14,7 @@ impl Default for HelloWorldTemplateBuilder {
             fn_builder: js::register_function(
                 "function(a1,a2){
                 const name = this.readUtf8FromMemory(a1,a2);
-                const result = window.LitHTML.html`<div>Hello ${name}</div>`;
+                const result = window.LitHtml.html`<div>Hello ${name}</div>`;
                 return this.storeObject(result);
             }",
             ),

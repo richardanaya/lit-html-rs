@@ -7,7 +7,7 @@ description = "A library for rendering HTML"
 license = "MIT OR Apache-2.0"
 categories = ["wasm", "no-std"]
 repository = "https://github.com/richardanaya/lit-html-rs"
-readme="README.md"
+readme="../README.md"
 
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html

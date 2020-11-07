@@ -1,6 +1,6 @@
 use lit_html::*;
 
-#[template("<div>Hello ${name}</div>")]
+#[template("<div>Hello ${name}!!</div>")]
 pub struct HelloWorldTemplate {
     pub name: String,
 }
@@ -10,6 +10,5 @@ pub fn main() {
     let template = HelloWorldTemplate {
         name: "Richard".to_string(),
     };
-    let template_result = template.execute();
-    render(template_result, js::DOM_BODY);
+    render(template.execute(), js::DOM_BODY);
 }

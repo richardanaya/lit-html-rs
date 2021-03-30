@@ -1,18 +1,16 @@
 [package]
 name = "lit-html"
-version = "0.0.2"
+version = "0.1.0"
 authors = ["Richard Anaya"]
 edition = "2018"
 description = "A library for rendering HTML"
 license = "MIT OR Apache-2.0"
 categories = ["wasm", "no-std"]
 repository = "https://github.com/richardanaya/lit-html-rs"
-readme="../README.md"
+readme="README.md"
 
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-js= "0.2.4"
-globals = "1.0.1"
-lit-html-macro={path="../lit-html-macro",version="0"}
+js= "0"

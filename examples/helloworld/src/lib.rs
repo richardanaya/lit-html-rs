@@ -1,14 +1,10 @@
+use js::*;
 use lit_html::*;
-
-#[template("<div>Hello ${name}!!</div>")]
-pub struct HelloWorldTemplate {
-    pub name: String,
-}
 
 #[no_mangle]
 pub fn main() {
-    let template = HelloWorldTemplate {
-        name: "Richard".to_string(),
-    };
-    render(template.execute(), js::DOM_BODY);
+    render(
+        html!(r#"<h1>Hello ${_.navigator.appCodeName}</h1>"#, 2),
+        DOM_BODY,
+    );
 }

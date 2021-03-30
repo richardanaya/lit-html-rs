@@ -3,18 +3,16 @@
 A Rust library for using the HTML template library [lit-html](https://lit-html.polymer-project.org/).
 
 ```rust
+use js::*;
 use lit_html::*;
-
-#[template("<div>Hello ${name}</div>")]
-pub struct HelloWorldTemplate {
-    pub name: String,
-}
 
 #[no_mangle]
 pub fn main() {
-    let template = HelloWorldTemplate {
-        name: "Richard".to_string(),
-    };
-    render(template.execute(), js::DOM_BODY);
+    let data = DataDictionary::new();
+    data.setString("name","Richard");
+    render(
+        html!(r#"<h1>Hello ${_.navigator.appCodeName}</h1>"#, data),
+        DOM_BODY,
+    );
 }
 ```

@@ -1,9 +1,9 @@
 #![no_std]
+extern crate alloc;
 use js::*;
 
-pub fn render<T, R>(template_result: T, dom: R)
+pub fn render<R>(template_result: &Template, dom: R)
 where
-    T: Into<f64>,
     R: Into<f64>,
 {
     let r = js!("function(template,dom){
@@ -11,13 +11,13 @@ where
         dom = this.getObject(dom);
         window.LitHtml.render(template,dom);
     }");
-    r.invoke_2(template_result.into(), dom.into());
+    r.invoke_2(template_result.handle, dom.into());
 }
 
 #[macro_export]
 macro_rules! html {
     ($e:expr,$d:expr) => {{
-        js!(&[
+        JSObject::from(js!(&[
             r#"function(_){
                 _ = this.getObject(_);
                 return this.storeObject(window.LitHtml.html`"#,
@@ -26,8 +26,116 @@ macro_rules! html {
             }"#
         ]
         .concat())
-        .invoke_1($d)
+        .invoke_1($d))
     }};
+}
+
+pub type Template = JSObject;
+
+pub trait TemplateValue {
+    fn set(self, data: &TemplateData, name: &str);
+}
+
+impl TemplateValue for &str {
+    fn set(self, data: &TemplateData, name: &str) {
+        js!("function(o,n,nlen,v,vlen){
+            this.getObject(o)[this.readUtf8FromMemory(n,nlen)] = this.readUtf8FromMemory(v,vlen);
+        }")
+        .invoke_5(
+            data.obj.handle,
+            name.as_ptr() as u32,
+            name.len() as u32,
+            self.as_ptr() as u32,
+            self.len() as u32,
+        );
+    }
+}
+
+impl TemplateValue for f64 {
+    fn set(self, data: &TemplateData, name: &str) {
+        js!("function(o,n,nlen,v){
+            this.getObject(o)[this.readUtf8FromMemory(n,nlen)] = v;
+        }")
+        .invoke_4(
+            data.obj.handle,
+            name.as_ptr() as u32,
+            name.len() as u32,
+            self,
+        );
+    }
+}
+
+impl TemplateValue for &Template {
+    fn set(self, data: &TemplateData, name: &str) {
+        js!("function(o,n,nlen,v){
+            this.getObject(o)[this.readUtf8FromMemory(n,nlen)] = this.getObject(v);
+        }")
+        .invoke_4(
+            data.obj.handle,
+            name.as_ptr() as u32,
+            name.len() as u32,
+            self.handle,
+        );
+    }
+}
+
+impl TemplateValue for u32 {
+    fn set(self, data: &TemplateData, name: &str) {
+        js!("function(o,n,nlen,v){
+            this.getObject(o)[this.readUtf8FromMemory(n,nlen)] = v;
+        }")
+        .invoke_4(
+            data.obj.handle,
+            name.as_ptr() as u32,
+            name.len() as u32,
+            self,
+        );
+    }
+}
+
+impl TemplateValue for bool {
+    fn set(self, data: &TemplateData, name: &str) {
+        js!("function(o,n,nlen,v){
+            this.getObject(o)[this.readUtf8FromMemory(n,nlen)] = v>0;
+        }")
+        .invoke_4(
+            data.obj.handle,
+            name.as_ptr() as u32,
+            name.len() as u32,
+            if self { 1.0 } else { 0.0 },
+        );
+    }
+}
+
+impl TemplateValue for i32 {
+    fn set(self, data: &TemplateData, name: &str) {
+        js!("function(o,n,nlen,v){
+            this.getObject(o)[this.readUtf8FromMemory(n,nlen)] = v;
+        }")
+        .invoke_4(
+            data.obj.handle,
+            name.as_ptr() as u32,
+            name.len() as u32,
+            self,
+        );
+    }
+}
+
+impl<T> TemplateValue for T
+where
+    T: Sync + FnMut() + 'static + Send,
+{
+    fn set(self, data: &TemplateData, name: &str) {
+        js!("function(o,n,nlen,v){
+            this.getObject(o)[this.readUtf8FromMemory(n,nlen)] = this.createCallback(v);
+        }")
+        .invoke_4(
+            data.obj.handle,
+            name.as_ptr() as u32,
+            name.len() as u32,
+            create_callback_0(self),
+        );
+    }
 }
 
 pub struct TemplateData {
@@ -41,17 +149,8 @@ impl TemplateData {
         }
     }
 
-    pub fn set(&self, name: &str, value: &str) {
-        js!("function(o,n,nlen,v,vlen){
-            this.getObject(o)[this.readUtf8FromMemory(n,nlen)] = this.readUtf8FromMemory(v,vlen);
-        }")
-        .invoke_5(
-            self.obj.handle,
-            name.as_ptr() as u32,
-            name.len() as u32,
-            value.as_ptr() as u32,
-            value.len() as u32,
-        );
+    pub fn set(&self, name: &str, value: impl TemplateValue) {
+        value.set(self, name);
     }
 }
 

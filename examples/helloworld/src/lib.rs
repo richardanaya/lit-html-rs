@@ -5,5 +5,5 @@ use lit_html::*;
 pub fn main() {
     let data = TemplateData::new();
     data.set("name", "Ferris");
-    render(html!(r#"<h1>Hello ${_.name}</h1>"#, &data), DOM_BODY);
+    render(&html!(r#"<h1>Hello ${_.name}</h1>"#, &data), DOM_BODY);
 }

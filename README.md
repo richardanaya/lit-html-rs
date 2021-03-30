@@ -9,9 +9,9 @@ use lit_html::*;
 #[no_mangle]
 pub fn main() {
     let data = DataDictionary::new();
-    data.setString("name","Richard");
+    data.setString("name","Ferris");
     render(
-        html!(r#"<h1>Hello ${_.navigator.appCodeName}</h1>"#, data),
+        html!(r#"<h1>Hello ${_.name}</h1>"#, data),
         DOM_BODY,
     );
 }

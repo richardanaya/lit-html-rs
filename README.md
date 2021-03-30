@@ -1,6 +1,6 @@
 # lit-html-rs
 
-A Rust library for using the HTML template library [lit-html](https://lit-html.polymer-project.org/).
+A Rust library for using the HTML template library [lit-html](https://lit-html.polymer-project.org/) created by the Google Polymer project.
 
 **this library is still in very early stages**
 

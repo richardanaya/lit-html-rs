@@ -3,8 +3,7 @@ use lit_html::*;
 
 #[no_mangle]
 pub fn main() {
-    render(
-        html!(r#"<h1>Hello ${_.navigator.appCodeName}</h1>"#, 2),
-        DOM_BODY,
-    );
+    let data = TemplateData::new();
+    data.set("name", "Ferris");
+    render(html!(r#"<h1>Hello ${_.name}</h1>"#, &data), DOM_BODY);
 }

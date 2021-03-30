@@ -4,6 +4,15 @@ A Rust library for using the HTML template library [lit-html](https://lit-html.p
 
 **this library is still in very early stages**
 
+```toml
+[dependencies]
+lit-html = "0"
+```
+
+# Basics
+
+`lit-html` works by creating tempaltes that are build to template data.  When you are building a `TemplateData` object your data is being moved outside of WebAssembly into an object in JavaScript that can be efficiently used by the `lit-html` template.
+
 ```rust
 use js::*;
 use lit_html::*;
@@ -18,7 +27,9 @@ pub fn main() {
 
 See it working [here](https://richardanaya.github.io/lit-html-rs/examples/helloworld/).
 
-# Example
+# Counter
+
+You can build up complex UI by creating Templates that contain other data bound templates. `lit-html` efficiently manipulates the DOM when data changes.
 
 ```rust
 use js::*;

@@ -11,7 +11,7 @@ lit-html = "0"
 
 # Basics
 
-`lit-html` works by creating tempaltes that are build to template data.  When you are building a `TemplateData` object your data is being moved outside of WebAssembly into an object in JavaScript that can be efficiently used by the `lit-html` template.
+`lit-html` works by creating templates that are effeciently template data to the DOM.  When you are building a `TemplateData` object your data is being moved from WebAssembly into an object in JavaScript that can be efficiently used by the `lit-html` template.
 
 ```rust
 use js::*;

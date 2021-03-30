@@ -8,8 +8,8 @@ use lit_html::*;
 
 #[no_mangle]
 pub fn main() {
-    let data = DataDictionary::new();
-    data.setString("name","Ferris");
+    let data = Dictionary::new();
+    data.set("name","Ferris");
     render(
         html!(r#"<h1>Hello ${_.name}</h1>"#, data),
         DOM_BODY,

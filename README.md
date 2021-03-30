@@ -13,3 +13,5 @@ pub fn main() {
     render(html!(r#"<h1>Hello ${_.name}</h1>"#, &data), DOM_BODY);
 }
 ```
+
+See it working [here](https://richardanaya.github.io/lit-html-rs/examples/helloworld/).

@@ -9,7 +9,9 @@ fn counter() -> Template {
     data.set("increment", || {
         unsafe {
             COUNT += 1;
-            local_storage_set_item("count", &COUNT.to_string())
+            local_storage_set_item("count", &COUNT.to_string());
+            let todos = globals::get::<todo::TodoList>();
+            todos.save();
         };
         rerender();
     });
@@ -45,3 +47,5 @@ pub fn main() {
     };
     rerender();
 }
+
+mod todo;

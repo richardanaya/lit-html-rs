@@ -52,16 +52,16 @@ fn counter() -> Template {
     });
     html!(
         r#"The current count is ${_.count} <button @click="${_.increment}">+</button>"#,
-        &data
+        data
     )
 }
 
 fn app() -> Template {
     let data = TemplateData::new();
-    data.set("content", &counter());
+    data.set("content", counter());
     html!(
         r#"<div>This is a counter in Rust!</div><div>${_.content}</div>"#,
-        &data
+        data
     )
 }
 

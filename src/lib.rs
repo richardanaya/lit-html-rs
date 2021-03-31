@@ -77,6 +77,20 @@ impl TemplateValue for f64 {
     }
 }
 
+impl TemplateValue for Template {
+    fn set(self, data: &TemplateData, name: &str) {
+        js!("function(o,n,nlen,v){
+            this.getObject(o)[this.readUtf8FromMemory(n,nlen)] = this.getObject(v);
+        }")
+        .invoke_4(
+            data.obj.handle,
+            name.as_ptr() as u32,
+            name.len() as u32,
+            self.handle,
+        );
+    }
+}
+
 impl TemplateValue for &Template {
     fn set(self, data: &TemplateData, name: &str) {
         js!("function(o,n,nlen,v){

@@ -21,12 +21,12 @@ fn counter() -> Template {
 
 fn app() -> Template {
     let data = TemplateData::new();
-    data.set("content", &counter());
+    data.set("content", counter());
     data.set("num_items_todo", 42);
-    if false {
+    if true {
         data.set(
             "cleared_content",
-            &html!(r#"<button class="clear-completed">Clear completed</button>"#),
+            html!(r#"<button class="clear-completed">Clear completed</button>"#),
         );
     }
     html!(include_str!("./app.html"), &data)

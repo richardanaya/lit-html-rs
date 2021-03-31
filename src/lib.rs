@@ -28,6 +28,18 @@ macro_rules! html {
         .concat())
         .invoke_1($d))
     }};
+    ($e:expr) => {{
+        JSObject::from(js!(&[
+            r#"function(_){
+                _ = this.getObject(_);
+                return this.storeObject(window.LitHtml.html`"#,
+            $e,
+            r#"`);
+            }"#
+        ]
+        .concat())
+        .invoke_0())
+    }};
 }
 
 pub type Template = JSObject;

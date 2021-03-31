@@ -26,10 +26,7 @@ fn app() -> Template {
     if false {
         data.set(
             "cleared_content",
-            &html!(
-                r#"<button class="clear-completed">Clear completed</button>"#,
-                0
-            ),
+            &html!(r#"<button class="clear-completed">Clear completed</button>"#),
         );
     }
     html!(include_str!("./app.html"), &data)

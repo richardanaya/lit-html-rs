@@ -1,8 +1,23 @@
 # lit-html-rs
 
-A Rust library for using the HTML template library [lit-html](https://lit-html.polymer-project.org/).
+A Rust library for using the HTML template library [lit-html](https://lit-html.polymer-project.org/) created by the Google Polymer project.
 
 **this library is still in very early stages**
+
+```toml
+[dependencies]
+lit-html = "0"
+```
+
+# Basics
+
+`lit-html` works by creating templates that efficiently render to the DOM.  When you are building a `TemplateData` object your data is being moved from WebAssembly into an object in JavaScript that can be used by the `lit-html` template.
+
+You can put the following data on TemplateData:
+* strings
+* numbers
+* booleans
+* callbacks functions
 
 ```rust
 use js::*;
@@ -18,7 +33,9 @@ pub fn main() {
 
 See it working [here](https://richardanaya.github.io/lit-html-rs/examples/helloworld/).
 
-# Example
+# Counter
+
+You can build up complex UI by creating Templates that contain other data bound templates. `lit-html` efficiently manipulates the DOM when data changes.
 
 ```rust
 use js::*;

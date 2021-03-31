@@ -1,5 +1,6 @@
 use js::*;
 use lit_html::*;
+use web::*;
 
 static mut COUNT: u32 = 0;
 
@@ -8,6 +9,7 @@ fn counter() -> Template {
     data.set("count", unsafe { COUNT });
     data.set("increment", || {
         unsafe { COUNT += 1 };
+        local
         rerender();
     });
     html!(

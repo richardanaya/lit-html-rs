@@ -3,6 +3,19 @@ use web::*;
 
 static mut COUNT: u32 = 0;
 
+struct AppState {
+    cleared: bool
+}
+
+impl Default for AppState {
+    fn default() -> Self {
+        AppState {
+            cleared: false
+        }
+    }
+}
+
+
 fn counter() -> Template {
     let data = TemplateData::new();
     data.set("count", unsafe { COUNT });
@@ -10,6 +23,8 @@ fn counter() -> Template {
         unsafe {
             COUNT += 1;
             local_storage_set_item("count", &COUNT.to_string());
+            let mut app_state = globals::get::<AppState>();
+            app_state.cleared = true;
             let todos = globals::get::<todo::TodoList>();
             todos.save();
         };
@@ -22,10 +37,12 @@ fn counter() -> Template {
 }
 
 fn app() -> Template {
+    let app_state = globals::get::<AppState>();
+    let todo_list = globals::get::<todo::TodoList>();
     let data = TemplateData::new();
     data.set("content", counter());
-    data.set("num_items_todo", 42);
-    if true {
+    data.set("num_items_todo", todo_list.items.len() as f64);
+    if app_state.cleared {
         data.set(
             "cleared_content",
             html!(r#"<button class="clear-completed">Clear completed</button>"#),

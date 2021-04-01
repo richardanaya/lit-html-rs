@@ -3,45 +3,60 @@ use web::*;
 
 static mut COUNT: u32 = 0;
 
+enum Mode {
+    All,
+    Active,
+    Completed,
+}
+
 struct AppState {
-    cleared: bool
+    cleared: bool,
+    mode: Mode,
 }
 
 impl Default for AppState {
     fn default() -> Self {
         AppState {
-            cleared: false
+            cleared: false,
+            mode: Mode::Active,
         }
     }
 }
 
-
-fn counter() -> Template {
+fn todo_item(i: &todo::Todo) -> Template {
     let data = TemplateData::new();
-    data.set("count", unsafe { COUNT });
-    data.set("increment", || {
-        unsafe {
-            COUNT += 1;
-            local_storage_set_item("count", &COUNT.to_string());
-            let mut app_state = globals::get::<AppState>();
-            app_state.cleared = true;
-            let todos = globals::get::<todo::TodoList>();
-            todos.save();
-        };
-        rerender();
-    });
-    html!(
-        r#"The current count is ${_.count} <button @click="${_.increment}">+</button>"#,
-        &data
-    )
+    data.set("text", &*i.text);
+    html!(include_str!("./todo_item.html"), &data)
 }
 
 fn app() -> Template {
     let app_state = globals::get::<AppState>();
     let todo_list = globals::get::<todo::TodoList>();
     let data = TemplateData::new();
-    data.set("content", counter());
     data.set("num_items_todo", todo_list.items.len() as f64);
+    data.set(
+        "todo_key_down",
+        KeyHandler::new(|e: KeyEvent| {
+            let input = InputElement::from(e.target());
+            if e.key_code() == 13 {
+                let v = input.value();
+                if let Some(txt) = v {
+                    let mut todos = globals::get::<todo::TodoList>();
+                    todos.add(&txt);
+                    todos.save();
+                }
+            }
+            rerender();
+        }),
+    );
+    data.set(
+        "todo_items",
+        todo_list
+            .items
+            .iter()
+            .map(|i| todo_item(i))
+            .collect::<Vec<Template>>(),
+    );
     if app_state.cleared {
         data.set(
             "cleared_content",

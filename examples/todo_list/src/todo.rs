@@ -31,14 +31,19 @@ impl TodoList {
             None => None,
         };
     }
+    pub fn add(&mut self, txt: &str) {
+        self.items.push(Todo {
+            text: txt.to_owned(),
+            completed: false,
+        });
+    }
 }
+
 impl Default for TodoList {
     fn default() -> Self {
         match TodoList::load() {
             Some(tl) => tl,
-            None => TodoList {
-                items: vec![]
-            }
+            None => TodoList { items: vec![] },
         }
     }
 }

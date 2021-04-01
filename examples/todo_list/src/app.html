@@ -14,6 +14,7 @@
       <header class="header">
         <h1>todos</h1>
         <input
+          @keydown="${_.todo_key_down}"
           class="new-todo"
           placeholder="What needs to be done?"
           autofocus
@@ -23,27 +24,14 @@
         <input id="toggle-all" class="toggle-all" type="checkbox" />
         <label for="toggle-all">Mark all as complete</label>
         <ul class="todo-list">
-          <li class="completed">
-            <div class="view">
-              <input class="toggle" type="checkbox" checked />
-              <label>Taste JavaScript</label>
-              <button class="destroy"></button>
-            </div>
-            <input class="edit" value="Create a TodoMVC template" />
-          </li>
-          <li>
-            <div class="view">
-              <input class="toggle" type="checkbox" />
-              <label>Buy a unicorn</label>
-              <button class="destroy"></button>
-            </div>
-            <input class="edit" value="Rule the web" />
-          </li>
+          ${_.todo_items}
         </ul>
       </section>
       ${_.content}
       <footer class="footer">
-        <span class="todo-count"><strong>${_.num_items_todo}</strong> item left</span>
+        <span class="todo-count"
+          ><strong>${_.num_items_todo}</strong> item left</span
+        >
         <ul class="filters">
           <li>
             <a class="selected" href="#/">All</a>

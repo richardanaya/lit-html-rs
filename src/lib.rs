@@ -1,6 +1,9 @@
 #![no_std]
 extern crate alloc;
+use alloc::boxed::Box;
+use alloc::string::String;
 use js::*;
+use web::*;
 
 pub fn render<R>(template_result: &Template, dom: R)
 where
@@ -91,6 +94,32 @@ impl TemplateValue for Template {
     }
 }
 
+impl TemplateValue for alloc::vec::Vec<Template> {
+    fn set(self, data: &TemplateData, name: &str) {
+        let a = JSObject::from(
+            js!("function(){
+            return this.storeObject([]);
+        }")
+            .invoke_0(),
+        );
+        for t in self {
+            js!("function(o,v){
+                this.getObject(o).push(this.getObject(v));
+            }")
+            .invoke_2(a.handle, t.handle);
+        }
+        js!("function(o,n,nlen,v){
+            this.getObject(o)[this.readUtf8FromMemory(n,nlen)] = this.getObject(v);
+        }")
+        .invoke_4(
+            data.obj.handle,
+            name.as_ptr() as u32,
+            name.len() as u32,
+            a.handle,
+        );
+    }
+}
+
 impl TemplateValue for &Template {
     fn set(self, data: &TemplateData, name: &str) {
         js!("function(o,n,nlen,v){
@@ -164,6 +193,21 @@ where
     }
 }
 
+impl TemplateValue for KeyHandler {
+    fn set(mut self, data: &TemplateData, name: &str) {
+        let mut f = self.handler.take().unwrap();
+        js!("function(o,n,nlen,v){
+            this.getObject(o)[this.readUtf8FromMemory(n,nlen)] = this.createCallback(v);
+        }")
+        .invoke_4(
+            data.obj.handle,
+            name.as_ptr() as u32,
+            name.len() as u32,
+            create_callback_1(move |v| f(KeyEvent::new(v))),
+        );
+    }
+}
+
 pub struct TemplateData {
     obj: JSObject,
 }
@@ -183,5 +227,81 @@ impl TemplateData {
 impl Into<f64> for &TemplateData {
     fn into(self) -> f64 {
         self.obj.handle
+    }
+}
+
+pub struct KeyHandler {
+    handler: Option<Box<dyn Sync + FnMut(KeyEvent) + 'static + Send>>,
+}
+
+impl KeyHandler {
+    pub fn new(f: impl Sync + FnMut(KeyEvent) + 'static + Send) -> KeyHandler {
+        KeyHandler {
+            handler: Some(Box::new(f)),
+        }
+    }
+}
+
+pub struct KeyEvent {
+    obj: JSObject,
+}
+
+impl KeyEvent {
+    pub fn new(o: f64) -> KeyEvent {
+        KeyEvent {
+            obj: JSObject::from(o),
+        }
+    }
+
+    pub fn key_code(&self) -> usize {
+        js!("function(o){
+            return this.getObject(o).keyCode;
+        }")
+        .invoke_1(self.obj.handle) as usize
+    }
+
+    pub fn target(&self) -> JSObject {
+        let r = js!("function(o){
+            return this.storeObject(this.getObject(o).target);
+        }")
+        .invoke_1(self.obj.handle);
+        JSObject::from(r)
+    }
+}
+
+pub struct InputElement {
+    obj: JSObject,
+}
+
+impl InputElement {
+    pub fn new(o: f64) -> InputElement {
+        InputElement {
+            obj: JSObject::from(o),
+        }
+    }
+
+    pub fn from(o: JSObject) -> InputElement {
+        InputElement { obj: o }
+    }
+
+    pub fn value(&self) -> Option<String> {
+        get_property(&self.obj, "value")
+    }
+}
+
+pub fn get_property(el: impl Into<f64>, name: &str) -> Option<alloc::string::String> {
+    let attr = js!(r#"function(o,strPtr,strLen){
+        o = this.getObject(o);
+        const a = o[this.readUtf8FromMemory(strPtr,strLen)];
+        if(a === null){
+            return -1;
+        } 
+        return this.writeCStringToMemory(a);
+    }"#)
+    .invoke_3(el.into(), name.as_ptr() as u32, name.len() as u32);
+    if attr == -1.0 {
+        return None;
+    } else {
+        Some(cstr_to_string(attr as i32))
     }
 }

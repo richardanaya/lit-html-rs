@@ -2,6 +2,11 @@ use lit_html::*;
 use serde::{Deserialize, Serialize};
 use web::*;
 
+// DATASTRUCTURES
+
+// First we need a datatstructure for representing our todo list
+// They use serde serialization/deserialization to convert to/from JSON
+
 #[derive(Serialize, Deserialize)]
 pub struct Todo {
     pub completed: bool,
@@ -13,11 +18,12 @@ pub struct TodoList {
     pub items: Vec<Todo>,
 }
 
+// Let's add some helper functions to store/load from the browser's local storage
 impl TodoList {
     pub fn save(&self) {
         match serde_json::to_string(self) {
             Ok(s) => local_storage_set_item("todos", &s),
-            Err(_) => console_error("error serializing todos"),
+            Err(_) => console_error("error saving todos to localstorage"),
         };
     }
     pub fn load() -> Option<TodoList> {
@@ -25,7 +31,7 @@ impl TodoList {
             Some(s) => match serde_json::from_str(&s) {
                 Ok(s) => Some(s),
                 Err(_) => {
-                    console_error("error parsing todos");
+                    console_error("error loading todos from localstorage");
                     None
                 }
             },
@@ -40,6 +46,7 @@ impl TodoList {
     }
 }
 
+// Our initial todo list should have no item
 impl Default for TodoList {
     fn default() -> Self {
         match TodoList::load() {
@@ -49,61 +56,66 @@ impl Default for TodoList {
     }
 }
 
-enum Mode {
-    All,
-    Active,
-    Completed,
-}
-
+// Let's create a structure that represents our app's state
 struct AppState {
     mode: Mode,
 }
 
+enum Mode {
+    All,       // Show all todos
+    Active,    // Show todos not completed
+    Completed, // Show todos that are completed
+}
+
+// Our default state for app should show active items only
 impl Default for AppState {
     fn default() -> Self {
         AppState { mode: Mode::Active }
     }
 }
 
-fn todo_item(pos: usize, todo: &Todo) -> Template {
-    let mut data = TemplateData::new();
-    data.set("text", &*todo.text);
-    data.set("completed", todo.completed);
-    data.set(
-        "toggle_done",
-        MouseEventHandler::new(move |_e: MouseEvent| {
-            let mut todos = globals::get::<TodoList>();
-            todos.items[pos].completed = !todos.items[pos].completed;
-            todos.save();
-            rerender();
-        }),
-    );
-    data.set(
-        "delete",
-        MouseEventHandler::new(move |_e: MouseEvent| {
-            let mut todos = globals::get::<TodoList>();
-            todos.items.remove(pos);
-            todos.save();
-            rerender();
-        }),
-    );
-    html!(
-        r#"<li>
-        <div class="view">
-        <input class="toggle" type="checkbox" @click="${_.toggle_done}" ?checked="${_.completed}"/>
-        <label>${_.text}</label>
-        <button class="destroy" @click="${_.delete}"></button>
-        </div>
-    </li>"#,
-        &data
-    )
+// FUNCTIONS
+
+// lit-html-rs uses functions to generate a tree of html templates that will be rendered to the browsers DOM
+
+// Okay, let's start our app, the first thing we need to do is render
+#[no_mangle]
+pub fn main() {
+    rerender();
 }
 
+fn rerender() {
+    // render next chance we get and prevent locks of global mutex
+    // in theory you could get around doing this by making sure your global
+    // state won't lock up
+    set_timeout(
+        || {
+            render(&app(), DOM_BODY);
+        },
+        0,
+    );
+}
+
+// Our first top most component is our app
 fn app() -> Template {
+    // Our app uses global state of our todo list and app state
+    // This basically gets a mutex locked instance of the type
+    // and instantiates it if it isn't already instantiated
     let todo_list = globals::get::<TodoList>();
     let app_state = globals::get::<AppState>();
+
+    // lit-html-rs works by create templates and rendering them with data
     let mut data = TemplateData::new();
-    data.set("num_items_todo", todo_list.items.len() as f64);
+    // how many todos are there to do
+    data.set(
+        "num_items_todo",
+        todo_list
+            .items
+            .iter()
+            .filter(|todo| !todo.completed)
+            .count() as f64,
+    );
+    // add a handler for whe user hits enter on input
     data.set(
         "todo_key_down",
         KeyEventHandler::new(|e: KeyEvent| {
@@ -120,20 +132,22 @@ fn app() -> Template {
             rerender();
         }),
     );
+    // add a list of child todo elements (see todo component below)
     data.set(
         "todo_items",
         todo_list
             .items
             .iter()
-            .filter(|todo| match app_state.mode {
+            .enumerate()
+            .filter(|(_, todo)| match app_state.mode {
                 Mode::All => true,
                 Mode::Completed => todo.completed == true,
                 Mode::Active => todo.completed == false,
             })
-            .enumerate()
             .map(|(pos, todo)| todo_item(pos, todo))
             .collect::<Vec<Template>>(),
     );
+    // handle when user clicks button to show all todos
     data.set(
         "toggle_filter_all",
         MouseEventHandler::new(move |_e: MouseEvent| {
@@ -142,6 +156,7 @@ fn app() -> Template {
             rerender();
         }),
     );
+    // handle when user clicks button to show only completed todos
     data.set(
         "toggle_filter_completed",
         MouseEventHandler::new(move |_e: MouseEvent| {
@@ -150,6 +165,7 @@ fn app() -> Template {
             rerender();
         }),
     );
+    // handle when user clicks button to show only non-completed todos
     data.set(
         "toggle_filter_active",
         MouseEventHandler::new(move |_e: MouseEvent| {
@@ -158,19 +174,14 @@ fn app() -> Template {
             rerender();
         }),
     );
+    match app_state.mode {
+        Mode::All => data.set("all_selected_class", "selected"),
+        Mode::Active => data.set("active_selected_class", "selected"),
+        Mode::Completed => data.set("completed_selected_class", "selected"),
+    }
+    // render the html with this data
     html!(
-        r##"<!DOCTYPE html>
-    <html lang="en">
-      <head>
-        <meta charset="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>Rust Todo</title>
-        <link
-          rel="stylesheet"
-          href="https://cdn.jsdelivr.net/npm/todomvc-app-css@2.3.0/index.css"
-        />
-      </head>
-      <body>
+        r##"
         <section class="todoapp">
           <header class="header">
             <h1>todos</h1>
@@ -195,40 +206,64 @@ fn app() -> Template {
             >
             <ul class="filters">
               <li @click="${_.toggle_filter_all}">
-                <a class="selected" href="#/">All</a>
+                <a class="${_.all_selected_class}" href="#">All</a>
               </li>
               <li @click="${_.toggle_filter_active}">
-                <a href="#/active">Active</a>
+                <a class="${_.active_selected_class}"  href="#">Active</a>
               </li>
               <li @click="${_.toggle_filter_completed}">
-                <a href="#/completed">Completed</a>
+                <a class="${_.completed_selected_class}" href="#">Completed</a>
               </li>
             </ul>
           </footer>
         </section>
         <footer class="info">
-          <p>Double-click to edit a todo</p>
+          <p>Want to see the source code? Go <a href="https://github.com/richardanaya/lit-html-rs/blob/master/examples/todo_list/src/lib.rs">here</a></p>
         </footer>
-      </body>
-    </html>
     "##,
         &data
     )
 }
 
-fn rerender() {
-    // render next chance we get and prevent locks of global mutex
-    // in theory you could get around doing this by making sure your global
-    // state won't lock up
-    set_timeout(
-        || {
-            render(&app(), DOM_BODY);
-        },
-        0,
+// this component renders a todo list item
+fn todo_item(pos: usize, todo: &Todo) -> Template {
+    // again, its just rendering a template
+    let mut data = TemplateData::new();
+    // the todo's text
+    data.set("text", &*todo.text);
+    // should the check mark be checked
+    if todo.completed {
+        data.set("check_class", "checked");
+    }
+    // add click handler if the click the completed button
+    data.set(
+        "toggle_done",
+        MouseEventHandler::new(move |_e: MouseEvent| {
+            let mut todos = globals::get::<TodoList>();
+            todos.items[pos].completed = !todos.items[pos].completed;
+            todos.save();
+            rerender();
+        }),
     );
-}
-
-#[no_mangle]
-pub fn main() {
-    rerender();
+    // add handler for if they delete the item
+    data.set(
+        "delete",
+        MouseEventHandler::new(move |_e: MouseEvent| {
+            let mut todos = globals::get::<TodoList>();
+            todos.items.remove(pos);
+            todos.save();
+            rerender();
+        }),
+    );
+    //render it
+    html!(
+        r#"<li>
+        <div class="view">
+        <div class="toggle ${_.check_class}" @click="${_.toggle_done}"></div>
+        <label>${_.text}</label>
+        <button class="destroy" @click="${_.delete}"></button>
+        </div>
+    </li>"#,
+        &data
+    )
 }

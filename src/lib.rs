@@ -3,7 +3,6 @@ extern crate alloc;
 use alloc::boxed::Box;
 use alloc::string::String;
 use js::*;
-use web::*;
 
 pub fn render<R>(template_result: &Template, dom: R)
 where
@@ -48,11 +47,11 @@ macro_rules! html {
 pub type Template = JSObject;
 
 pub trait TemplateValue {
-    fn set(self, data: &TemplateData, name: &str);
+    fn set(self, data: &mut TemplateData, name: &str);
 }
 
 impl TemplateValue for &str {
-    fn set(self, data: &TemplateData, name: &str) {
+    fn set(self, data: &mut TemplateData, name: &str) {
         js!("function(o,n,nlen,v,vlen){
             this.getObject(o)[this.readUtf8FromMemory(n,nlen)] = this.readUtf8FromMemory(v,vlen);
         }")
@@ -67,7 +66,7 @@ impl TemplateValue for &str {
 }
 
 impl TemplateValue for f64 {
-    fn set(self, data: &TemplateData, name: &str) {
+    fn set(self, data: &mut TemplateData, name: &str) {
         js!("function(o,n,nlen,v){
             this.getObject(o)[this.readUtf8FromMemory(n,nlen)] = v;
         }")
@@ -81,7 +80,7 @@ impl TemplateValue for f64 {
 }
 
 impl TemplateValue for Template {
-    fn set(self, data: &TemplateData, name: &str) {
+    fn set(self, data: &mut TemplateData, name: &str) {
         js!("function(o,n,nlen,v){
             this.getObject(o)[this.readUtf8FromMemory(n,nlen)] = this.getObject(v);
         }")
@@ -95,7 +94,7 @@ impl TemplateValue for Template {
 }
 
 impl TemplateValue for alloc::vec::Vec<Template> {
-    fn set(self, data: &TemplateData, name: &str) {
+    fn set(self, data: &mut TemplateData, name: &str) {
         let a = JSObject::from(
             js!("function(){
             return this.storeObject([]);
@@ -121,7 +120,7 @@ impl TemplateValue for alloc::vec::Vec<Template> {
 }
 
 impl TemplateValue for &Template {
-    fn set(self, data: &TemplateData, name: &str) {
+    fn set(self, data: &mut TemplateData, name: &str) {
         js!("function(o,n,nlen,v){
             this.getObject(o)[this.readUtf8FromMemory(n,nlen)] = this.getObject(v);
         }")
@@ -135,7 +134,7 @@ impl TemplateValue for &Template {
 }
 
 impl TemplateValue for u32 {
-    fn set(self, data: &TemplateData, name: &str) {
+    fn set(self, data: &mut TemplateData, name: &str) {
         js!("function(o,n,nlen,v){
             this.getObject(o)[this.readUtf8FromMemory(n,nlen)] = v;
         }")
@@ -149,7 +148,7 @@ impl TemplateValue for u32 {
 }
 
 impl TemplateValue for bool {
-    fn set(self, data: &TemplateData, name: &str) {
+    fn set(self, data: &mut TemplateData, name: &str) {
         js!("function(o,n,nlen,v){
             this.getObject(o)[this.readUtf8FromMemory(n,nlen)] = v>0;
         }")
@@ -163,7 +162,7 @@ impl TemplateValue for bool {
 }
 
 impl TemplateValue for i32 {
-    fn set(self, data: &TemplateData, name: &str) {
+    fn set(self, data: &mut TemplateData, name: &str) {
         js!("function(o,n,nlen,v){
             this.getObject(o)[this.readUtf8FromMemory(n,nlen)] = v;
         }")
@@ -180,7 +179,7 @@ impl<T> TemplateValue for T
 where
     T: Sync + FnMut() + 'static + Send,
 {
-    fn set(self, data: &TemplateData, name: &str) {
+    fn set(self, data: &mut TemplateData, name: &str) {
         js!("function(o,n,nlen,v){
             this.getObject(o)[this.readUtf8FromMemory(n,nlen)] = this.createCallback(v);
         }")
@@ -193,8 +192,8 @@ where
     }
 }
 
-impl TemplateValue for KeyHandler {
-    fn set(mut self, data: &TemplateData, name: &str) {
+impl TemplateValue for KeyEventHandler {
+    fn set(mut self, data: &mut TemplateData, name: &str) {
         let mut f = self.handler.take().unwrap();
         js!("function(o,n,nlen,v){
             this.getObject(o)[this.readUtf8FromMemory(n,nlen)] = this.createCallback(v);
@@ -204,6 +203,21 @@ impl TemplateValue for KeyHandler {
             name.as_ptr() as u32,
             name.len() as u32,
             create_callback_1(move |v| f(KeyEvent::new(v))),
+        );
+    }
+}
+
+impl TemplateValue for MouseEventHandler {
+    fn set(mut self, data: &mut TemplateData, name: &str) {
+        let mut f = self.handler.take().unwrap();
+        js!("function(o,n,nlen,v){
+            this.getObject(o)[this.readUtf8FromMemory(n,nlen)] = this.createCallback(v);
+        }")
+        .invoke_4(
+            data.obj.handle,
+            name.as_ptr() as u32,
+            name.len() as u32,
+            create_callback_1(move |v| f(MouseEvent::new(v))),
         );
     }
 }
@@ -219,7 +233,7 @@ impl TemplateData {
         }
     }
 
-    pub fn set(&self, name: &str, value: impl TemplateValue) {
+    pub fn set(&mut self, name: &str, value: impl TemplateValue) {
         value.set(self, name);
     }
 }
@@ -230,13 +244,13 @@ impl Into<f64> for &TemplateData {
     }
 }
 
-pub struct KeyHandler {
+pub struct KeyEventHandler {
     handler: Option<Box<dyn Sync + FnMut(KeyEvent) + 'static + Send>>,
 }
 
-impl KeyHandler {
-    pub fn new(f: impl Sync + FnMut(KeyEvent) + 'static + Send) -> KeyHandler {
-        KeyHandler {
+impl KeyEventHandler {
+    pub fn new(f: impl Sync + FnMut(KeyEvent) + 'static + Send) -> KeyEventHandler {
+        KeyEventHandler {
             handler: Some(Box::new(f)),
         }
     }
@@ -285,11 +299,15 @@ impl InputElement {
     }
 
     pub fn value(&self) -> Option<String> {
-        get_property(&self.obj, "value")
+        get_property_string(&self.obj, "value")
+    }
+
+    pub fn set_value(&mut self, s: &str) {
+        set_property_string(&self.obj, "value", s)
     }
 }
 
-pub fn get_property(el: impl Into<f64>, name: &str) -> Option<alloc::string::String> {
+pub fn get_property_string(el: impl Into<f64>, name: &str) -> Option<alloc::string::String> {
     let attr = js!(r#"function(o,strPtr,strLen){
         o = this.getObject(o);
         const a = o[this.readUtf8FromMemory(strPtr,strLen)];
@@ -303,5 +321,50 @@ pub fn get_property(el: impl Into<f64>, name: &str) -> Option<alloc::string::Str
         return None;
     } else {
         Some(cstr_to_string(attr as i32))
+    }
+}
+
+pub fn set_property_string(el: impl Into<f64>, name: &str, txt: &str) {
+    js!(r#"function(o,strPtr,strLen,valPtr,valLen){
+        o = this.getObject(o);
+        o[this.readUtf8FromMemory(strPtr,strLen)] = this.readUtf8FromMemory(valPtr,valLen);
+    }"#)
+    .invoke_5(
+        el.into(),
+        name.as_ptr() as u32,
+        name.len() as u32,
+        txt.as_ptr() as u32,
+        txt.len() as u32,
+    );
+}
+
+pub struct MouseEventHandler {
+    handler: Option<Box<dyn Sync + FnMut(MouseEvent) + 'static + Send>>,
+}
+
+impl MouseEventHandler {
+    pub fn new(f: impl Sync + FnMut(MouseEvent) + 'static + Send) -> MouseEventHandler {
+        MouseEventHandler {
+            handler: Some(Box::new(f)),
+        }
+    }
+}
+
+pub struct MouseEvent {
+    obj: JSObject,
+}
+
+impl MouseEvent {
+    pub fn new(o: f64) -> MouseEvent {
+        MouseEvent {
+            obj: JSObject::from(o),
+        }
+    }
+    pub fn target(&self) -> JSObject {
+        let r = js!("function(o){
+            return this.storeObject(this.getObject(o).target);
+        }")
+        .invoke_1(self.obj.handle);
+        JSObject::from(r)
     }
 }

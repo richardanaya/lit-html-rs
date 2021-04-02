@@ -44,7 +44,7 @@ use lit_html::*;
 static mut COUNT: u32 = 0;
 
 fn counter() -> Template {
-    let data = TemplateData::new();
+    let mut data = TemplateData::new();
     data.set("count", unsafe { COUNT });
     data.set("increment", || {
         unsafe { COUNT += 1 };
@@ -57,7 +57,7 @@ fn counter() -> Template {
 }
 
 fn app() -> Template {
-    let data = TemplateData::new();
+    let mut data = TemplateData::new();
     data.set("content", counter());
     html!(
         r#"<div>This is a counter in Rust!</div><div>${_.content}</div>"#,

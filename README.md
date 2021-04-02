@@ -9,7 +9,7 @@ A Rust library for using the HTML template library [lit-html](https://lit-html.p
 lit-html = "0"
 ```
 
-Here's a demo of the iconic [todo list](https://richardanaya.github.io/lit-html-rs/examples/todo_list/) example and it's [source](https://github.com/richardanaya/lit-html-rs/blob/master/examples/todo_list/src/lib.rs).
+Here's a demo of the iconic [todo list](https://richardanaya.github.io/lit-html-rs/examples/todo_list/).
 
 # Basics
 

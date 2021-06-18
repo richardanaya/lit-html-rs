@@ -1,6 +1,12 @@
-use lit_html::*;
+use lit_html::{
+    html, render, KeyEvent, KeyEventHandler, MouseEvent, MouseEventHandler, Template, TemplateData,
+    TemplateValue,
+};
 use serde::{Deserialize, Serialize};
-use web::*;
+use web::{
+    console_error, js, local_storage_get_item, local_storage_set_item, set_timeout, InputElement,
+    JSObject, DOM_BODY,
+};
 
 // DATASTRUCTURES
 
